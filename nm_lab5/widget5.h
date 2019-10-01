@@ -44,18 +44,16 @@ private:
     QGridLayout *methodsLayout;
     QVBoxLayout *controlsLayout;
 
-    QVector<QLineEdit *> limitsLineEdit,
-                         conditionsLineEdit;
+    QVector<QLineEdit *> conditionsLineEdit;
+    QLineEdit *initCondLineEdit;
 
     QString solution;
-
-    QLabel *limitsLabel,
-           *conditionsLabel;
 
     QVector<QLabel *> stepLabel;
     QVector<QLineEdit *> stepLineEdit;
 
     QLineEdit *functionLineEdit;
+    QLineEdit *analyticSolution;
 
     QGroupBox *methodsBox;
     QVector<QRadioButton *> method;

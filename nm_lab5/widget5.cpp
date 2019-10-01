@@ -1,14 +1,5 @@
 #include "widget5.h"
-//#include "../nm_lab2/graph_widget.h"
-//#include "../nm_lab1/methods.h"
-
-#ifdef _WIN32
-const QString PATH = "C:/Users/pkmixer/Documents/nm_lab4/";
-#endif
-
-#ifdef linux
-const QString PATH = "/home/pkmixer/downloads/Numeric_methods/nm_lab4/";
-#endif
+#include "methods.h"
 
 void Widget5::ConfigureLayouts() {
     mainLayout = new QVBoxLayout(this);
@@ -23,38 +14,23 @@ void Widget5::ConfigureLayouts() {
     mainLayout->addLayout(functionLayout);
     mainLayout->addLayout(sourceLayout);
 
-    for (int i = 0; i < limitsLineEdit.size(); ++i) {
-        limitsLineEdit[i] = new QLineEdit("");
-    }
-    for (int i = 0; i < conditionsLineEdit.size(); ++i) {
-        conditionsLineEdit[i] = new QLineEdit("");
-    }
-
-    functionLayout->addStretch(1);
-    functionLayout->insertWidget(1, functionLineEdit);
-    functionLayout->addStretch(1);
-    functionLayout->insertWidget(2, conditionsLineEdit[0]);
-    functionLayout->addStretch(1);
-    functionLayout->insertWidget(3, conditionsLineEdit[1]);
-    functionLayout->addStretch(1);
-
     stepLineEdit[0]->setFixedWidth(50);
     stepLineEdit[1]->setFixedWidth(50);
 
-    dimensionLayout->addStretch(1);
     dimensionLayout->insertWidget(1, stepLabel[0]);
-    dimensionLayout->addStretch(1);
     dimensionLayout->insertWidget(2, stepLineEdit[0]);
-    dimensionLayout->addStretch(1);
     dimensionLayout->insertWidget(3, stepLabel[1]);
-    dimensionLayout->addStretch(1);
     dimensionLayout->insertWidget(4, stepLineEdit[1]);
+    dimensionLayout->addStretch(1);
 
-
-    dimensionLayout->setAlignment(Qt::AlignTop);
+    functionLayout->insertWidget(1, functionLineEdit);
+    functionLayout->insertWidget(2, conditionsLineEdit[0]);
+    functionLayout->insertWidget(3, conditionsLineEdit[1]);
+    functionLayout->insertWidget(4, initCondLineEdit);
+    functionLayout->insertWidget(5, analyticSolution);
+    functionLayout->addStretch(1);
 
     methodsBox->setFixedHeight(100);
-
     methodsBox->setLayout(methodsLayout);
 
     sourceLayout->addWidget(methodsBox);
@@ -76,29 +52,36 @@ void Widget5::ConfigureLayouts() {
 }
 
 Widget5::Widget5(QWidget *parent) : QWidget(parent) {
-    functionLineEdit = new QLineEdit;
+    this->resize(300, 200);
+    QString fun = "du/dt = d^2u/(dx)^2 + 0.5exp(-0.5t) * cos(x)";
+    functionLineEdit = new QLineEdit(fun);
+
     stepLabel.resize(2);
     stepLineEdit.resize(2);
-    stepLabel[0] = new QLabel("Шаг по x:");
-    stepLineEdit[0] = new QLineEdit;
-    stepLabel[1] = new QLabel("Шаг по t:");
-    stepLineEdit[1] = new QLineEdit;
-    methodsBox = new QGroupBox("Методы");
-    limitsLabel = new QLabel("Отрезок:");
-    conditionsLabel = new QLabel("Условия:");
-    limitsLineEdit.resize(2);
+    stepLabel[0] = new QLabel("N:");
+    stepLineEdit[0] = new QLineEdit("10");
+    stepLabel[1] = new QLabel("K:");
+    stepLineEdit[1] = new QLineEdit("10");
+
     conditionsLineEdit.resize(2);
+    conditionsLineEdit[0] = new QLineEdit("u'_x(0, t) = exp(-0.5t)");
+    conditionsLineEdit[1] = new QLineEdit("u'_x(pi, t) = -exp(-0.5t)");
+
+    initCondLineEdit = new QLineEdit("u(x, 0) = sin(x)");
+
+    analyticSolution = new QLineEdit("u(x,t) = exp(-0.5t) * sin(x)");
+
+    methodsBox = new QGroupBox("Методы");
     method.resize(3);
     method[0] = new QRadioButton("Явный");
     method[1] = new QRadioButton("Неявный");
     method[2] = new QRadioButton("Кранк-Никлсон");
+
     runButton = new QPushButton("Решить");
     loadButton = new QPushButton("Открыть");
     restoreButton = new QPushButton("Сбросить");
 
     ConfigureLayouts();
-
-    LoadFromFile(PATH + "2lab.csv");
 
     QObject::connect(method[0], &QRadioButton::clicked, this, [&]() {
         currentMethod = 1;
@@ -111,16 +94,37 @@ Widget5::Widget5(QWidget *parent) : QWidget(parent) {
     });
 
     QObject::connect(runButton, &QPushButton::clicked, this, [&]() {
+        int Nx = stepLineEdit[0]->text().toInt();
+        int Nk = stepLineEdit[1]->text().toInt();
+        QVector<double> x(Nx + 1);
+        QVector<double> t(Nk + 1);
+        double max_t = 1;
+        double tao = max_t / t.size();
+        double h = PI / x.size();
 
+        for (int i = 0; i < x.size(); ++i) {
+            x[i] = h * i;
+        }
+
+        for (int k = 0; k < t.size(); ++k) {
+            t[k] = tao * k;
+        }
+
+        QVector< QVector<double> > u = ExplicitParabolic(tao, h, x, t);
+        QVector< QVector<double> > analytic_u = AnalyticSolution(x, t);
+
+        for (int k = 0; k < u.size(); ++k) {
+            for (int i = 0; i < u[k].size(); ++i) {
+                std::cout << u[k][i] - analytic_u[k][i] << " ";
+            }
+            std::cout << std::endl;
+        }
     });
 
     QObject::connect(restoreButton, &QPushButton::clicked, this, [&]() {
         functionLineEdit->setText("");
         stepLineEdit[0]->setText("");
         stepLineEdit[1]->setText("");
-        for (int i = 0; i < limitsLineEdit.size(); ++i) {
-            limitsLineEdit[i]->setText("");
-        }
         for (int i = 0; i < conditionsLineEdit.size(); ++i) {
             conditionsLineEdit[i]->setText("");
         }
@@ -128,38 +132,32 @@ Widget5::Widget5(QWidget *parent) : QWidget(parent) {
 
     QObject::connect(loadButton, &QPushButton::clicked, this, [&]() {
         QString fileName = QFileDialog::getOpenFileName(this,
-                tr("Загрузить матрицу из файла"),
-                QDir::currentPath() + "/../nm_lab4",
+                tr("Загрузить"),
+                QDir::currentPath() + "/../nm_lab",
                 tr("Таблица (*.csv);;Все файлы (*)"));
         LoadFromFile(fileName);
     });
-
-    emit functionLineEdit->textChanged("");
-    emit method[0]->clicked();
 }
 
 void Widget5::LoadFromFile(const QString &fileName) {
-    QFile file(fileName);
+//    QFile file(fileName);
 
-    if (!file.open(QIODevice::ReadOnly)) {
-        qDebug() << file.errorString();
-    }
+//    if (!file.open(QIODevice::ReadOnly)) {
+//        qDebug() << file.errorString();
+//    }
 
-    QString function(file.readLine().simplified());
-    QVector<QString> limits =
-            QString(file.readLine().simplified()).split(',').toVector();
-    QVector<QString> conditions =
-            QString(file.readLine().simplified()).split(',').toVector();
-    solution = file.readLine().simplified();
-    QString h = file.readLine().simplified();
+//    QString function(file.readLine().simplified());
+//    QVector<QString> limits =
+//            QString(file.readLine().simplified()).split(',').toVector();
+//    QVector<QString> conditions =
+//            QString(file.readLine().simplified()).split(',').toVector();
+//    solution = file.readLine().simplified();
+//    QString h = file.readLine().simplified();
 
-    functionLineEdit->setText(function);
-    for (int i = 0; i < limits.size(); ++i) {
-        limitsLineEdit[i]->setText(limits[i]);
-    }
-    for (int i = 0; i < conditions.size(); ++i) {
-        conditionsLineEdit[i]->setText(conditions[i]);
-    }
-    stepLineEdit[0]->setText(h);
+//    functionLineEdit->setText(function);
+//    for (int i = 0; i < conditions.size(); ++i) {
+//        conditionsLineEdit[i]->setText(conditions[i]);
+//    }
+//    stepLineEdit[0]->setText(h);
 }
 
