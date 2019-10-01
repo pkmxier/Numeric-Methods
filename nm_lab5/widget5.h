@@ -24,6 +24,7 @@
 #include <QCloseEvent>
 #include <QGraphicsView>
 #include <complex>
+#include <QProcess>
 
 class Widget5 : public QWidget {
     Q_OBJECT

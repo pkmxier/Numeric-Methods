@@ -119,6 +119,13 @@ Widget5::Widget5(QWidget *parent) : QWidget(parent) {
             }
             std::cout << std::endl;
         }
+
+        QProcess p;
+        QStringList params;
+
+        params << "../nm_lab5/graph.py";
+        p.start("python3", params);
+        p.waitForFinished(-1);
     });
 
     QObject::connect(restoreButton, &QPushButton::clicked, this, [&]() {
