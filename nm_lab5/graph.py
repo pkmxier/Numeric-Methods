@@ -1,19 +1,48 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import sys
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 import numpy as np
+from pprint import pprint
 
-def convert(pred):
-    res = 0
-    for x in pred:
-        res = res * 2 + x
-    return res
 
-train_data = np.array([[-2.8, 1.4], [-0.2, -3.5], [2.8, -4],
-                       [-2.1, -2.7], [0.3, -4.1], [-1, -4]])
-train_labels = np.array([[0], [1], [1], [0], [1], [0]])
+x_max = np.pi
+t_max = 1
 
-plt.scatter([x[0] for x in train_data], [x[1] for x in train_data],
-            c=[convert(x) for x in train_labels])
+u = []
+analytic_u = []
+
+with open(sys.argv[1], "r") as f, \
+     open(sys.argv[2], "r") as f1:
+    tao, h = map(float, f.readline().split())
+    Nk, Nx = map(int, f.readline().split())
+    for i in range(Nk):
+        cur = [float(x) for x in f.readline().split()]
+        u.append(cur)
+
+        cur = [float(x) for x in f1.readline().split()]
+        analytic_u.append(cur)
+
+times = [0, 0.3, 0.7]
+colors = ['r', 'g', 'b']
+patches = []
+
+for i in range(len(times)):
+    patches.append(mpatches.Patch(color=colors[i], \
+                   label="t = " + "{:.2}".format((times[i] * Nk) * tao)))
+
+plt.legend(handles=patches)
+
+X = [x for x in np.linspace(0, np.pi, Nx)]
+T = [t for t in np.linspace(0, 1, Nk)]
+
+for i in range(len(times)):
+    Y = [y for y in analytic_u[int(times[i] * Nk)]]
+    plt.plot(X, Y, color=colors[i])
+
+    Y = [y for y in u[int(times[i] * Nk)]]
+    plt.plot(X, Y, color=colors[i], linestyle=':')
+
 plt.show()

@@ -27,18 +27,19 @@ QVector<QVector<double> > ExplicitParabolic(double tao, double h,
     QVector< QVector<double> > result(Nk, QVector<double>(Nx, 0));
 
     for (int i = 0; i < Nx; ++i) {
-        result[0][i] = std::sin(t[i]);
+        result[0][i] = std::sin(x[i]);
     }
 
     for (int k = 1; k < Nk; ++k) {
         for (int i = 1; i < Nx - 1; ++i) {
-            result[k][i] = sigma * (result[k - 1][i + 1] + result[k - 1][i - 1])
+            result[k][i] = sigma * result[k - 1][i + 1]
                            + (1 - 2 * sigma) * result[k - 1][i]
-                           + tao * f(t[k - 1], x[i]);
+                           + sigma * result[k - 1][i - 1]
+                           + 0.5 * tao * std::exp(-0.5 * t[k - 1]) * std::cos(x[i]);
         }
 
         result[k][0] = result[k][1] - h * std::exp(-0.5 * t[k]);
-        result[k][Nx - 1] = result[k][Nx - 2] + h * std::exp(-0.5 * t[k]);
+        result[k][Nx - 1] = result[k][Nx - 2] - h * std::exp(-0.5 * t[k]);
     }
 
     return result;

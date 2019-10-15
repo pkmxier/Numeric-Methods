@@ -61,7 +61,7 @@ Widget5::Widget5(QWidget *parent) : QWidget(parent) {
     stepLabel[0] = new QLabel("N:");
     stepLineEdit[0] = new QLineEdit("10");
     stepLabel[1] = new QLabel("K:");
-    stepLineEdit[1] = new QLineEdit("10");
+    stepLineEdit[1] = new QLineEdit("100");
 
     conditionsLineEdit.resize(2);
     conditionsLineEdit[0] = new QLineEdit("u'_x(0, t) = exp(-0.5t)");
@@ -120,12 +120,38 @@ Widget5::Widget5(QWidget *parent) : QWidget(parent) {
             std::cout << std::endl;
         }
 
+        QFile file("analytic");
+        QFile file1("method");
+        bool is_open = file.open(QIODevice::WriteOnly |
+                                 QIODevice::Append |
+                                 QIODevice::Text);
+        bool is_open1 = file1.open(QIODevice::WriteOnly |
+                                   QIODevice::Append |
+                                   QIODevice::Text);
+        if (is_open && is_open1) {
+            QTextStream stream(&file);
+            QTextStream stream1(&file1);
+
+            stream << tao << " " << h << endl;
+            stream << analytic_u.size() << " " << analytic_u[0].size() << endl;
+            for (int i = 0; i < u.size(); ++i) {
+                for (int j = 0; j < u[i].size(); ++j) {
+                    stream << analytic_u[i][j] << " ";
+                    stream1 << u[i][j] << " ";
+                }
+                stream << endl;
+                stream1 << endl;
+            }
+        }
+
         QProcess p;
         QStringList params;
 
-        params << "../nm_lab5/graph.py";
+        params << "../nm_lab5/graph.py" << "analytic" << "method";
         p.start("python3", params);
         p.waitForFinished(-1);
+        file.remove();
+        file1.remove();
     });
 
     QObject::connect(restoreButton, &QPushButton::clicked, this, [&]() {
@@ -147,24 +173,6 @@ Widget5::Widget5(QWidget *parent) : QWidget(parent) {
 }
 
 void Widget5::LoadFromFile(const QString &fileName) {
-//    QFile file(fileName);
 
-//    if (!file.open(QIODevice::ReadOnly)) {
-//        qDebug() << file.errorString();
-//    }
-
-//    QString function(file.readLine().simplified());
-//    QVector<QString> limits =
-//            QString(file.readLine().simplified()).split(',').toVector();
-//    QVector<QString> conditions =
-//            QString(file.readLine().simplified()).split(',').toVector();
-//    solution = file.readLine().simplified();
-//    QString h = file.readLine().simplified();
-
-//    functionLineEdit->setText(function);
-//    for (int i = 0; i < conditions.size(); ++i) {
-//        conditionsLineEdit[i]->setText(conditions[i]);
-//    }
-//    stepLineEdit[0]->setText(h);
 }
 
