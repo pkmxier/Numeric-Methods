@@ -1,4 +1,5 @@
 #include "methods.h"
+#include <cmath>
 
 double f(double x, double t) {
     return std::exp(-0.5 * t) * std::sin(x);
@@ -19,7 +20,8 @@ QVector< QVector<double> > AnalyticSolution(QVector<double> &x,
 
 QVector<QVector<double> > ExplicitParabolic(double tao, double h,
                                             QVector<double> &x,
-                                            QVector<double> &t) {
+                                            QVector<double> &t,
+                                            int currentApprox) {
     int Nx = x.size();
     int Nk = t.size();
     double sigma = tao / (h * h);
@@ -35,11 +37,20 @@ QVector<QVector<double> > ExplicitParabolic(double tao, double h,
             result[k][i] = sigma * result[k - 1][i + 1]
                            + (1 - 2 * sigma) * result[k - 1][i]
                            + sigma * result[k - 1][i - 1]
-                           + 0.5 * tao * std::exp(-0.5 * t[k - 1]) * std::cos(x[i]);
+                           + 0.5 * tao * std::exp(-0.5 * t[k - 1]) * std::sin(x[i]);
         }
 
-        result[k][0] = result[k][1] - h * std::exp(-0.5 * t[k]);
-        result[k][Nx - 1] = result[k][Nx - 2] - h * std::exp(-0.5 * t[k]);
+        if (currentApprox == 1) {
+            result[k][0] = result[k][1] - h * std::exp(-0.5 * t[k]);
+            result[k][Nx - 1] = result[k][Nx - 2] - h * std::exp(-0.5 * t[k]);
+        } else if(currentApprox == 2) {
+            result[k][0] = (- 2 * h * std::exp(-0.5 * t[k])
+                            + 4 * result[k][1]
+                            - result[k][2]) / 3;
+            result[k][Nx - 1] = (- 2 * h * std::exp(-0.5 * t[k])
+                                 + 4 * result[k][Nx - 2]
+                                 - result[k][Nx - 3]) / 3;
+        }
     }
 
     return result;

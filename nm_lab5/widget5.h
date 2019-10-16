@@ -43,6 +43,7 @@ private:
     QHBoxLayout *sourceLayout;
     QVBoxLayout *functionLayout;
     QGridLayout *methodsLayout;
+    QGridLayout *approxLayout;
     QVBoxLayout *controlsLayout;
 
     QVector<QLineEdit *> conditionsLineEdit;
@@ -57,13 +58,16 @@ private:
     QLineEdit *analyticSolution;
 
     QGroupBox *methodsBox;
+    QGroupBox *borderApproxBox;
     QVector<QRadioButton *> method;
+    QVector<QRadioButton *> approx;
 
     QPushButton *runButton,
                 *loadButton,
                 *restoreButton;
 
     int currentMethod = 1;
+    int currentApprox = 1;
 };
 
 #endif // WIDGET5_H

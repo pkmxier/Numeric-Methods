@@ -8,6 +8,7 @@ void Widget5::ConfigureLayouts() {
     functionLayout = new QVBoxLayout(this);
     controlsLayout = new QVBoxLayout(this);
     methodsLayout = new QGridLayout(this);
+    approxLayout = new QGridLayout(this);
 
     this->setLayout(mainLayout);
     mainLayout->addLayout(dimensionLayout);
@@ -33,12 +34,21 @@ void Widget5::ConfigureLayouts() {
     methodsBox->setFixedHeight(100);
     methodsBox->setLayout(methodsLayout);
 
+    borderApproxBox->setFixedHeight(100);
+    borderApproxBox->setLayout(approxLayout);
+
     sourceLayout->addWidget(methodsBox);
     methodsLayout->addWidget(method[0], 0, 0);
     methodsLayout->addWidget(method[1], 1, 0);
     methodsLayout->addWidget(method[2], 2, 0);
 
-    method[0]->setChecked(true);
+    sourceLayout->addWidget(borderApproxBox);
+    approxLayout->addWidget(approx[0], 0, 0);
+    approxLayout->addWidget(approx[1], 1, 0);
+    approxLayout->addWidget(approx[2], 2, 0);
+
+    method[currentMethod - 1]->setChecked(true);
+    approx[currentApprox - 1]->setChecked(true);
 
     sourceLayout->addLayout(controlsLayout);
 
@@ -53,7 +63,7 @@ void Widget5::ConfigureLayouts() {
 
 Widget5::Widget5(QWidget *parent) : QWidget(parent) {
     this->resize(300, 200);
-    QString fun = "du/dt = d^2u/(dx)^2 + 0.5exp(-0.5t) * cos(x)";
+    QString fun = "du/dt = d^2u/(dx)^2 + 0.5exp(-0.5t) * sin(x)";
     functionLineEdit = new QLineEdit(fun);
 
     stepLabel.resize(2);
@@ -77,6 +87,12 @@ Widget5::Widget5(QWidget *parent) : QWidget(parent) {
     method[1] = new QRadioButton("Неявный");
     method[2] = new QRadioButton("Кранк-Никлсон");
 
+    borderApproxBox = new QGroupBox("Аппроксимация производной");
+    approx.resize(3);
+    approx[0] = new QRadioButton("1 порядок, 2 точки");
+    approx[1] = new QRadioButton("2 порядок, 3 точки");
+    approx[2] = new QRadioButton("2 порядок, 2 точки");
+
     runButton = new QPushButton("Решить");
     loadButton = new QPushButton("Открыть");
     restoreButton = new QPushButton("Сбросить");
@@ -93,14 +109,24 @@ Widget5::Widget5(QWidget *parent) : QWidget(parent) {
         currentMethod = 3;
     });
 
+    QObject::connect(approx[0], &QRadioButton::clicked, this, [&]() {
+        currentApprox = 1;
+    });
+    QObject::connect(approx[1], &QRadioButton::clicked, this, [&]() {
+        currentApprox = 2;
+    });
+    QObject::connect(approx[2], &QRadioButton::clicked, this, [&]() {
+        currentApprox = 3;
+    });
+
     QObject::connect(runButton, &QPushButton::clicked, this, [&]() {
         int Nx = stepLineEdit[0]->text().toInt();
         int Nk = stepLineEdit[1]->text().toInt();
         QVector<double> x(Nx + 1);
         QVector<double> t(Nk + 1);
-        double max_t = 1;
-        double tao = max_t / t.size();
-        double h = PI / x.size();
+        double max_t = 3;
+        double tao = max_t / Nk;
+        double h = PI / Nx;
 
         for (int i = 0; i < x.size(); ++i) {
             x[i] = h * i;
@@ -110,28 +136,30 @@ Widget5::Widget5(QWidget *parent) : QWidget(parent) {
             t[k] = tao * k;
         }
 
-        QVector< QVector<double> > u = ExplicitParabolic(tao, h, x, t);
+        QVector< QVector<double> > u = ExplicitParabolic(
+                    tao, h, x, t, currentApprox);
         QVector< QVector<double> > analytic_u = AnalyticSolution(x, t);
 
+        double error = 0;
         for (int k = 0; k < u.size(); ++k) {
             for (int i = 0; i < u[k].size(); ++i) {
-                std::cout << u[k][i] - analytic_u[k][i] << " ";
+                error = std::max(error, std::abs(u[k][i] - analytic_u[k][i]));
             }
-            std::cout << std::endl;
         }
+
+        qDebug() << "Error: " << error;
 
         QFile file("analytic");
         QFile file1("method");
         bool is_open = file.open(QIODevice::WriteOnly |
-                                 QIODevice::Append |
                                  QIODevice::Text);
         bool is_open1 = file1.open(QIODevice::WriteOnly |
-                                   QIODevice::Append |
                                    QIODevice::Text);
         if (is_open && is_open1) {
             QTextStream stream(&file);
             QTextStream stream1(&file1);
 
+            stream << max_t << endl;
             stream << tao << " " << h << endl;
             stream << analytic_u.size() << " " << analytic_u[0].size() << endl;
             for (int i = 0; i < u.size(); ++i) {
@@ -147,11 +175,9 @@ Widget5::Widget5(QWidget *parent) : QWidget(parent) {
         QProcess p;
         QStringList params;
 
-        params << "../nm_lab5/graph.py" << "analytic" << "method";
+        params << "../graph.py" << "analytic" << "method";
         p.start("python3", params);
         p.waitForFinished(-1);
-        file.remove();
-        file1.remove();
     });
 
     QObject::connect(restoreButton, &QPushButton::clicked, this, [&]() {

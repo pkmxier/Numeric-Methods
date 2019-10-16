@@ -11,6 +11,7 @@ QVector< QVector<double> > AnalyticSolution(QVector<double> &x,
 
 QVector< QVector<double> > ExplicitParabolic(double tao, double h,
                                              QVector<double> &x,
-                                             QVector<double> &t);
+                                             QVector<double> &t,
+                                             int currentApprox);
 
 #endif // METHODS_H
