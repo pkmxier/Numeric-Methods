@@ -18,10 +18,14 @@ void Widget5::ConfigureLayouts() {
     stepLineEdit[0]->setFixedWidth(50);
     stepLineEdit[1]->setFixedWidth(50);
 
+    thetaLineEdit->setFixedWidth(50);
+
     dimensionLayout->insertWidget(1, stepLabel[0]);
     dimensionLayout->insertWidget(2, stepLineEdit[0]);
     dimensionLayout->insertWidget(3, stepLabel[1]);
     dimensionLayout->insertWidget(4, stepLineEdit[1]);
+    dimensionLayout->insertWidget(5, thetaLabel);
+    dimensionLayout->insertWidget(6, thetaLineEdit);
     dimensionLayout->addStretch(1);
 
     functionLayout->insertWidget(1, functionLineEdit);
@@ -72,6 +76,9 @@ Widget5::Widget5(QWidget *parent) : QWidget(parent) {
     stepLineEdit[0] = new QLineEdit("10");
     stepLabel[1] = new QLabel("K:");
     stepLineEdit[1] = new QLineEdit("100");
+
+    thetaLabel = new QLabel(QString::fromWCharArray(L"\u03B8") + ":");
+    thetaLineEdit = new QLineEdit("0.5");
 
     conditionsLineEdit.resize(2);
     conditionsLineEdit[0] = new QLineEdit("u'_x(0, t) = exp(-0.5t)");
@@ -127,6 +134,7 @@ Widget5::Widget5(QWidget *parent) : QWidget(parent) {
         double max_t = 3;
         double tao = max_t / Nk;
         double h = PI / Nx;
+        double theta = thetaLineEdit->text().toDouble();
 
         for (int i = 0; i < x.size(); ++i) {
             x[i] = h * i;
@@ -136,8 +144,16 @@ Widget5::Widget5(QWidget *parent) : QWidget(parent) {
             t[k] = tao * k;
         }
 
-        QVector< QVector<double> > u = ExplicitParabolic(
-                    tao, h, x, t, currentApprox);
+        QVector< QVector<double> > u;
+
+        if (currentMethod == 1) {
+            u = ExplicitParabolic(tao, h, x, t, currentApprox);
+        } else if (currentMethod == 2) {
+            u = ImplicitParabolic(tao, h, x, t, currentApprox, 1);
+        } else if (currentMethod == 3) {
+            u = ImplicitParabolic(tao, h, x, t, currentApprox, theta);
+        }
+
         QVector< QVector<double> > analytic_u = AnalyticSolution(x, t);
 
         double error = 0;
@@ -175,8 +191,8 @@ Widget5::Widget5(QWidget *parent) : QWidget(parent) {
         QProcess p;
         QStringList params;
 
-        params << "../graph.py" << "analytic" << "method";
-        p.start("python3", params);
+        params << "../nm_lab5/graph.py" << "analytic" << "method";
+        p.startDetached("python3", params);
         p.waitForFinished(-1);
     });
 

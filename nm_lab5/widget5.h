@@ -54,6 +54,9 @@ private:
     QVector<QLabel *> stepLabel;
     QVector<QLineEdit *> stepLineEdit;
 
+    QLabel *thetaLabel;
+    QLineEdit *thetaLineEdit;
+
     QLineEdit *functionLineEdit;
     QLineEdit *analyticSolution;
 

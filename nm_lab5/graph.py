@@ -35,14 +35,30 @@ for i in range(len(times)):
 
 plt.legend(handles=patches)
 
-X = [x for x in np.linspace(0, np.pi, Nx)]
-T = [t for t in np.linspace(0, 1, Nk)]
+X = np.linspace(0, x_max, Nx)
+T = np.linspace(0, t_max, Nk)
 
+plt.subplot(2, 1, 1)
+plt.xlabel("x")
+plt.ylabel("u(x, t)")
 for i in range(len(times)):
-    Y = [y for y in u[int(times[i] * Nk)]]
+    arg = int(times[i] * Nk)
+    Y = u[arg]
     plt.plot(X, Y, color=colors[i])
 
-    Y = [y for y in analytic_u[int(times[i] * Nk)]]
+    Y = analytic_u[arg]
     plt.plot(X, Y, linestyle=':', color='k')
+
+plt.subplot(2, 1, 2)
+plt.xlabel("t")
+plt.ylabel("max error")
+error = []
+for i in range(len(T)):
+    m = 0
+    for j in range(len(u[i])):
+        m = max(abs(u[i][j] - analytic_u[i][j]), m)
+    error.append(m)
+plt.plot(T, error, color='red')
+
 
 plt.show()
