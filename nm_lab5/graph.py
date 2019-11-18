@@ -25,7 +25,7 @@ with open(sys.argv[1], "r") as f, \
         cur = [float(x) for x in f1.readline().split()]
         u.append(cur)
 
-times = [0, 0.3, 0.7]
+times = [0, 0.5, 1]
 colors = ['r', 'g', 'b']
 patches = []
 
@@ -43,6 +43,8 @@ plt.xlabel("x")
 plt.ylabel("u(x, t)")
 for i in range(len(times)):
     arg = int(times[i] * Nk)
+    if arg >= len(u):
+        arg = len(u) - 1
     Y = u[arg]
     plt.plot(X, Y, color=colors[i])
 

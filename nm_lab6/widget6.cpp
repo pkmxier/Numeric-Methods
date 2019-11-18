@@ -1,14 +1,15 @@
-#include "widget5.h"
+#include "widget6.h"
 #include "methods.h"
 
-void Widget5::ConfigureLayouts() {
+void Widget6::ConfigureLayouts() {
     mainLayout = new QVBoxLayout(this);
     dimensionLayout = new QHBoxLayout(this);
     sourceLayout = new QHBoxLayout(this);
     functionLayout = new QVBoxLayout(this);
     controlsLayout = new QVBoxLayout(this);
     methodsLayout = new QGridLayout(this);
-    approxLayout = new QGridLayout(this);
+    borderApproxLayout = new QGridLayout(this);
+    timeApproxLayout = new QGridLayout(this);
 
     this->setLayout(mainLayout);
     mainLayout->addLayout(dimensionLayout);
@@ -18,33 +19,33 @@ void Widget5::ConfigureLayouts() {
     stepLineEdit[0]->setFixedWidth(50);
     stepLineEdit[1]->setFixedWidth(50);
 
-    thetaLineEdit->setFixedWidth(50);
-
     maxTLineEdit->setFixedWidth(50);
 
     dimensionLayout->insertWidget(1, stepLabel[0]);
     dimensionLayout->insertWidget(2, stepLineEdit[0]);
     dimensionLayout->insertWidget(3, stepLabel[1]);
     dimensionLayout->insertWidget(4, stepLineEdit[1]);
-    dimensionLayout->insertWidget(5, thetaLabel);
-    dimensionLayout->insertWidget(6, thetaLineEdit);
-    dimensionLayout->insertWidget(7, maxTLabel);
-    dimensionLayout->insertWidget(8, maxTLineEdit);
-    dimensionLayout->insertWidget(9, sigmaLabel);
+    dimensionLayout->insertWidget(5, maxTLabel);
+    dimensionLayout->insertWidget(6, maxTLineEdit);
+    dimensionLayout->insertWidget(7, sigmaLabel);
     dimensionLayout->addStretch(1);
 
     functionLayout->insertWidget(1, functionLineEdit);
     functionLayout->insertWidget(2, conditionsLineEdit[0]);
     functionLayout->insertWidget(3, conditionsLineEdit[1]);
-    functionLayout->insertWidget(4, initCondLineEdit);
-    functionLayout->insertWidget(5, analyticSolution);
+    functionLayout->insertWidget(4, initCondLineEdit[0]);
+    functionLayout->insertWidget(5, initCondLineEdit[1]);
+    functionLayout->insertWidget(6, analyticSolution);
     functionLayout->addStretch(1);
 
     methodsBox->setFixedHeight(100);
     methodsBox->setLayout(methodsLayout);
 
     borderApproxBox->setFixedHeight(100);
-    borderApproxBox->setLayout(approxLayout);
+    borderApproxBox->setLayout(borderApproxLayout);
+
+    timeApproxBox->setFixedHeight(100);
+    timeApproxBox->setLayout(timeApproxLayout);
 
     sourceLayout->addWidget(methodsBox);
     methodsLayout->addWidget(method[0], 0, 0);
@@ -52,12 +53,17 @@ void Widget5::ConfigureLayouts() {
     methodsLayout->addWidget(method[2], 2, 0);
 
     sourceLayout->addWidget(borderApproxBox);
-    approxLayout->addWidget(approx[0], 0, 0);
-    approxLayout->addWidget(approx[1], 1, 0);
-    approxLayout->addWidget(approx[2], 2, 0);
+    borderApproxLayout->addWidget(approx[0], 0, 0);
+    borderApproxLayout->addWidget(approx[1], 1, 0);
+    borderApproxLayout->addWidget(approx[2], 2, 0);
+
+    sourceLayout->addWidget(timeApproxBox);
+    timeApproxLayout->addWidget(approx[3], 0, 0);
+    timeApproxLayout->addWidget(approx[4], 1, 0);
 
     method[currentMethod - 1]->setChecked(true);
-    approx[currentApprox - 1]->setChecked(true);
+    approx[currentBorderApprox - 1]->setChecked(true);
+    approx[2 + currentTimeApprox]->setChecked(true);
 
     sourceLayout->addLayout(controlsLayout);
 
@@ -70,16 +76,17 @@ void Widget5::ConfigureLayouts() {
     controlsLayout->addWidget(restoreButton);
 }
 
-double Widget5::CalcSigma() {
+double Widget6::CalcSigma() {
     double tao =
            maxTLineEdit->text().toDouble() / stepLineEdit[1]->text().toDouble();
     double h = 3.14 / stepLineEdit[0]->text().toDouble();
-    return tao / (h * h);
+    return tao * tao / (h * h);
 }
 
-Widget5::Widget5(QWidget *parent) : QWidget(parent) {
+Widget6::Widget6(QWidget *parent) : QWidget(parent) {
     this->resize(300, 200);
-    QString fun = "du/dt = d^2u/(dx)^2 + 0.5exp(-0.5t) * sin(x)";
+    QString fun = "d^2u/(dt)^2 + 3du/dt ="
+                  "d^2u/(dx)^2 + du/dx - u - cosx * exp(-t)";
     functionLineEdit = new QLineEdit(fun);
 
     stepLabel.resize(2);
@@ -89,21 +96,20 @@ Widget5::Widget5(QWidget *parent) : QWidget(parent) {
     stepLabel[1] = new QLabel("K:");
     stepLineEdit[1] = new QLineEdit("100");
 
-    thetaLabel = new QLabel(QString::fromWCharArray(L"\u03B8") + ":");
-    thetaLineEdit = new QLineEdit("0.5");
-
     maxTLabel = new QLabel("max t:");
     maxTLineEdit = new QLineEdit("3");
 
     sigmaLabel = new QLabel("sigma: " + QString::number(CalcSigma()));
 
     conditionsLineEdit.resize(2);
-    conditionsLineEdit[0] = new QLineEdit("u'_x(0, t) = exp(-0.5t)");
-    conditionsLineEdit[1] = new QLineEdit("u'_x(pi, t) = -exp(-0.5t)");
+    conditionsLineEdit[0] = new QLineEdit("u'_x(0, t) = exp(-t)");
+    conditionsLineEdit[1] = new QLineEdit("u'_x(pi, t) = -exp(-t)");
 
-    initCondLineEdit = new QLineEdit("u(x, 0) = sin(x)");
+    initCondLineEdit.resize(2);
+    initCondLineEdit[0] = new QLineEdit("u(x, 0) = sin(x)");
+    initCondLineEdit[1] = new QLineEdit("u'_t(x, 0) = -sin(x)");
 
-    analyticSolution = new QLineEdit("u(x,t) = exp(-0.5t) * sin(x)");
+    analyticSolution = new QLineEdit("u(x,t) = exp(-t) * sin(x)");
 
     methodsBox = new QGroupBox("Методы");
     method.resize(3);
@@ -111,11 +117,15 @@ Widget5::Widget5(QWidget *parent) : QWidget(parent) {
     method[1] = new QRadioButton("Неявный");
     method[2] = new QRadioButton("Кранк-Никлсон");
 
-    borderApproxBox = new QGroupBox("Аппроксимация производной");
-    approx.resize(3);
+    borderApproxBox = new QGroupBox("Аппроксимация на границе");
+    approx.resize(5);
     approx[0] = new QRadioButton("1 порядок, 2 точки");
     approx[1] = new QRadioButton("2 порядок, 3 точки");
     approx[2] = new QRadioButton("2 порядок, 2 точки");
+
+    timeApproxBox = new QGroupBox("Аппроксимация по времени");
+    approx[3] = new QRadioButton("1 порядок");
+    approx[4] = new QRadioButton("2 порядок");
 
     runButton = new QPushButton("Решить");
     loadButton = new QPushButton("Открыть");
@@ -134,13 +144,20 @@ Widget5::Widget5(QWidget *parent) : QWidget(parent) {
     });
 
     QObject::connect(approx[0], &QRadioButton::clicked, this, [&]() {
-        currentApprox = 1;
+        currentBorderApprox = 1;
     });
     QObject::connect(approx[1], &QRadioButton::clicked, this, [&]() {
-        currentApprox = 2;
+        currentBorderApprox = 2;
     });
     QObject::connect(approx[2], &QRadioButton::clicked, this, [&]() {
-        currentApprox = 3;
+        currentBorderApprox = 3;
+    });
+
+    QObject::connect(approx[3], &QRadioButton::clicked, this, [&]() {
+        currentTimeApprox = 1;
+    });
+    QObject::connect(approx[4], &QRadioButton::clicked, this, [&]() {
+        currentTimeApprox = 2;
     });
 
     QObject::connect(stepLineEdit[0], &QLineEdit::textChanged, this, [&]() {
@@ -160,10 +177,9 @@ Widget5::Widget5(QWidget *parent) : QWidget(parent) {
         int Nk = stepLineEdit[1]->text().toInt();
         QVector<double> x(Nx + 1);
         QVector<double> t(Nk + 1);
-        double max_t = maxTLineEdit->text().toDouble();
+        double max_t = 3;
         double tao = max_t / Nk;
         double h = PI / Nx;
-        double theta = thetaLineEdit->text().toDouble();
 
         for (int i = 0; i < x.size(); ++i) {
             x[i] = h * i;
@@ -176,13 +192,12 @@ Widget5::Widget5(QWidget *parent) : QWidget(parent) {
         QVector< QVector<double> > u;
 
         if (currentMethod == 1) {
-            u = ExplicitParabolic(tao, h, x, t, currentApprox);
+            u = ExplicitHyperbolic(tao, h, x, t, currentBorderApprox,
+                                                 currentTimeApprox);
         } else if (currentMethod == 2) {
-            u = ImplicitParabolic(tao, h, x, t, currentApprox, 1);
-        } else if (currentMethod == 3) {
-            u = ImplicitParabolic(tao, h, x, t, currentApprox, theta);
+            u = ImplicitHyperbolic(tao, h, x, t, currentBorderApprox,
+                                                 currentTimeApprox);
         }
-
         QVector< QVector<double> > analytic_u = AnalyticSolution(x, t);
 
         double error = 0;
@@ -243,7 +258,7 @@ Widget5::Widget5(QWidget *parent) : QWidget(parent) {
     });
 }
 
-void Widget5::LoadFromFile(const QString &fileName) {
+void Widget6::LoadFromFile(const QString &fileName) {
 
 }
 

@@ -1,5 +1,5 @@
-﻿#ifndef WIDGET5_H
-#define WIDGET5_H
+﻿#ifndef WIDGET6_H
+#define WIDGET6_H
 #include <QWidget>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
@@ -26,11 +26,11 @@
 #include <complex>
 #include <QProcess>
 
-class Widget5 : public QWidget {
+class Widget6 : public QWidget {
     Q_OBJECT
 
 public:
-    explicit Widget5(QWidget *parent = nullptr);
+    explicit Widget6(QWidget *parent = nullptr);
 
 private:
     void LoadFromFile(const QString &fileName);
@@ -45,19 +45,17 @@ private:
     QHBoxLayout *sourceLayout;
     QVBoxLayout *functionLayout;
     QGridLayout *methodsLayout;
-    QGridLayout *approxLayout;
+    QGridLayout *borderApproxLayout;
+    QGridLayout *timeApproxLayout;
     QVBoxLayout *controlsLayout;
 
     QVector<QLineEdit *> conditionsLineEdit;
-    QLineEdit *initCondLineEdit;
+    QVector<QLineEdit *> initCondLineEdit;
 
     QString solution;
 
     QVector<QLabel *> stepLabel;
     QVector<QLineEdit *> stepLineEdit;
-
-    QLabel *thetaLabel;
-    QLineEdit *thetaLineEdit;
 
     QLabel *maxTLabel;
     QLineEdit *maxTLineEdit;
@@ -69,6 +67,7 @@ private:
 
     QGroupBox *methodsBox;
     QGroupBox *borderApproxBox;
+    QGroupBox *timeApproxBox;
     QVector<QRadioButton *> method;
     QVector<QRadioButton *> approx;
 
@@ -77,7 +76,8 @@ private:
                 *restoreButton;
 
     int currentMethod = 1;
-    int currentApprox = 1;
+    int currentBorderApprox = 1;
+    int currentTimeApprox = 1;
 };
 
-#endif // WIDGET5_H
+#endif // WIDGET6_H
