@@ -39,6 +39,3 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 DISTFILES += \
     graph.py \
     graph.py
-
-RESOURCES += \
-    res.qrc

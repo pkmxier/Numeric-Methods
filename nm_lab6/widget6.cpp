@@ -115,7 +115,6 @@ Widget6::Widget6(QWidget *parent) : QWidget(parent) {
     method.resize(3);
     method[0] = new QRadioButton("Явный");
     method[1] = new QRadioButton("Неявный");
-    method[2] = new QRadioButton("Кранк-Никлсон");
 
     borderApproxBox = new QGroupBox("Аппроксимация на границе");
     approx.resize(5);
@@ -177,7 +176,7 @@ Widget6::Widget6(QWidget *parent) : QWidget(parent) {
         int Nk = stepLineEdit[1]->text().toInt();
         QVector<double> x(Nx + 1);
         QVector<double> t(Nk + 1);
-        double max_t = 3;
+        double max_t = maxTLineEdit->text().toDouble();
         double tao = max_t / Nk;
         double h = PI / Nx;
 
