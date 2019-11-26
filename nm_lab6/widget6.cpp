@@ -19,14 +19,15 @@ void Widget6::ConfigureLayouts() {
     stepLineEdit[0]->setFixedWidth(50);
     stepLineEdit[1]->setFixedWidth(50);
 
-    thetaLineEdit->setFixedWidth(50);
+    maxTLineEdit->setFixedWidth(50);
 
     dimensionLayout->insertWidget(1, stepLabel[0]);
     dimensionLayout->insertWidget(2, stepLineEdit[0]);
     dimensionLayout->insertWidget(3, stepLabel[1]);
     dimensionLayout->insertWidget(4, stepLineEdit[1]);
-    dimensionLayout->insertWidget(5, thetaLabel);
-    dimensionLayout->insertWidget(6, thetaLineEdit);
+    dimensionLayout->insertWidget(5, maxTLabel);
+    dimensionLayout->insertWidget(6, maxTLineEdit);
+    dimensionLayout->insertWidget(7, sigmaLabel);
     dimensionLayout->addStretch(1);
 
     functionLayout->insertWidget(1, functionLineEdit);
@@ -75,6 +76,13 @@ void Widget6::ConfigureLayouts() {
     controlsLayout->addWidget(restoreButton);
 }
 
+double Widget6::CalcSigma() {
+    double tao =
+           maxTLineEdit->text().toDouble() / stepLineEdit[1]->text().toDouble();
+    double h = 3.14 / stepLineEdit[0]->text().toDouble();
+    return tao * tao / (h * h);
+}
+
 Widget6::Widget6(QWidget *parent) : QWidget(parent) {
     this->resize(300, 200);
     QString fun = "d^2u/(dt)^2 + 3du/dt ="
@@ -88,8 +96,10 @@ Widget6::Widget6(QWidget *parent) : QWidget(parent) {
     stepLabel[1] = new QLabel("K:");
     stepLineEdit[1] = new QLineEdit("100");
 
-    thetaLabel = new QLabel(QString::fromWCharArray(L"\u03B8") + ":");
-    thetaLineEdit = new QLineEdit("0.5");
+    maxTLabel = new QLabel("max t:");
+    maxTLineEdit = new QLineEdit("3");
+
+    sigmaLabel = new QLabel("sigma: " + QString::number(CalcSigma()));
 
     conditionsLineEdit.resize(2);
     conditionsLineEdit[0] = new QLineEdit("u'_x(0, t) = exp(-t)");
@@ -105,7 +115,6 @@ Widget6::Widget6(QWidget *parent) : QWidget(parent) {
     method.resize(3);
     method[0] = new QRadioButton("Явный");
     method[1] = new QRadioButton("Неявный");
-    method[2] = new QRadioButton("Кранк-Никлсон");
 
     borderApproxBox = new QGroupBox("Аппроксимация на границе");
     approx.resize(5);
@@ -150,15 +159,26 @@ Widget6::Widget6(QWidget *parent) : QWidget(parent) {
         currentTimeApprox = 2;
     });
 
+    QObject::connect(stepLineEdit[0], &QLineEdit::textChanged, this, [&]() {
+        sigmaLabel->setText("sigma: " + QString::number(CalcSigma()));
+    });
+
+    QObject::connect(stepLineEdit[1], &QLineEdit::textChanged, this, [&]() {
+        sigmaLabel->setText("sigma: " + QString::number(CalcSigma()));
+    });
+
+    QObject::connect(maxTLineEdit, &QLineEdit::textChanged, this, [&]() {
+        sigmaLabel->setText("sigma: " + QString::number(CalcSigma()));
+    });
+
     QObject::connect(runButton, &QPushButton::clicked, this, [&]() {
         int Nx = stepLineEdit[0]->text().toInt();
         int Nk = stepLineEdit[1]->text().toInt();
         QVector<double> x(Nx + 1);
         QVector<double> t(Nk + 1);
-        double max_t = 3;
+        double max_t = maxTLineEdit->text().toDouble();
         double tao = max_t / Nk;
         double h = PI / Nx;
-        double theta = thetaLineEdit->text().toDouble();
 
         for (int i = 0; i < x.size(); ++i) {
             x[i] = h * i;

@@ -76,10 +76,7 @@ QVector<QVector<double> > ExplicitHyperbolic(double tao, double h,
         }
     } else if (currentTimeApprox == 2) {
         for (int i = 0; i < Nx; ++i) {
-            result[1][i] = result[0][i] * (1 - tao * tao / 2)
-                - tao * std::sin(x[i])
-                + tao * tao / 2 * (2 * std::sin(x[i]) + std::cos(x[i])
-                               - std::cos(x[i]) * std::exp(-t[0]));
+            result[1][i] = std::sin(x[i]) * (1 - tao + tao * tao / 2);
         }
     }
 
@@ -138,14 +135,11 @@ QVector<QVector<double> > ImplicitHyperbolic(double tao, double h,
 
     if (currentTimeApprox == 1) {
         for (int i = 0; i < Nx; ++i) {
-            result[1][i] = result[0][i] - tao * std::sin(x[i]);
+            result[1][i] = std::sin(x[i]) * (1 - tao);
         }
     } else if (currentTimeApprox == 2) {
         for (int i = 0; i < Nx; ++i) {
-            result[1][i] = result[0][i] * (1 - tao * tao / 2)
-                - tao * std::sin(x[i])
-                + tao * tao / 2 * (2 * std::sin(x[i]) + std::cos(x[i])
-                               - std::cos(x[i]) * std::exp(-t[0]));
+            result[1][i] = std::sin(x[i]) * (1 - tao + tao * tao / 2);
         }
     }
 
@@ -161,8 +155,8 @@ QVector<QVector<double> > ImplicitHyperbolic(double tao, double h,
     for (int k = 2; k < Nk; ++k) {
         for (int i = 1; i < a.size() - 1; ++i) {
             b[i] = std::cos(x[i]) * std::exp(-t[k])
-                    - result[k - 1][i] * 2 / (tao * tao)
-                    - result[k - 2][i] * (1.5 / tao - 1 / (tao * tao));
+                    + (-2 * result[k - 1][i] + result[k - 2][i]) / (tao * tao)
+                    - 1.5 * result[k - 2][i] / tao;
         }
 
 
@@ -186,7 +180,22 @@ QVector<QVector<double> > ImplicitHyperbolic(double tao, double h,
             b[b.size() - 1] = -2 * h * std::exp(-t[k])
                     - b[b.size() - 2] / (1 / (h * h) - 1 / (2 * h));
         } else if (currentBorderApprox == 3) {
+            a[0][0] =
+                1 + h * h / (2 * tao * tao) + 3 * h * h / (4 * tao) + h * h / 2;
+            a[0][1] = -1;
 
+            a[a.size() - 1][a.size() - 2] = -1;
+            a[a.size() - 1][a.size() - 1] =
+                1 + h * h / (2 * tao * tao) + 3 * h * h / (4 * tao) + h * h / 2;
+
+            b[0] = - h * std::exp(-t[k])
+                   - h * h / (2 * tao * tao) *
+                     (-2 * result[k - 1][0] + result[k - 2][0])
+                   + 3 * h * h / (4 * tao) * result[k - 2][0];
+            b[b.size() - 1] = - h * std::exp(-t[k])
+                   - h * h / (2 * tao * tao) *
+                     (-2 * result[k - 1][Nx - 1] + result[k - 2][Nx - 1])
+                   + 3 * h * h / (4 * tao) * result[k - 2][Nx - 1];
         }
 
         result[k] = Sweep(a, b);

@@ -20,12 +20,17 @@ void Widget5::ConfigureLayouts() {
 
     thetaLineEdit->setFixedWidth(50);
 
+    maxTLineEdit->setFixedWidth(50);
+
     dimensionLayout->insertWidget(1, stepLabel[0]);
     dimensionLayout->insertWidget(2, stepLineEdit[0]);
     dimensionLayout->insertWidget(3, stepLabel[1]);
     dimensionLayout->insertWidget(4, stepLineEdit[1]);
     dimensionLayout->insertWidget(5, thetaLabel);
     dimensionLayout->insertWidget(6, thetaLineEdit);
+    dimensionLayout->insertWidget(7, maxTLabel);
+    dimensionLayout->insertWidget(8, maxTLineEdit);
+    dimensionLayout->insertWidget(9, sigmaLabel);
     dimensionLayout->addStretch(1);
 
     functionLayout->insertWidget(1, functionLineEdit);
@@ -65,6 +70,13 @@ void Widget5::ConfigureLayouts() {
     controlsLayout->addWidget(restoreButton);
 }
 
+double Widget5::CalcSigma() {
+    double tao =
+           maxTLineEdit->text().toDouble() / stepLineEdit[1]->text().toDouble();
+    double h = 3.14 / stepLineEdit[0]->text().toDouble();
+    return tao / (h * h);
+}
+
 Widget5::Widget5(QWidget *parent) : QWidget(parent) {
     this->resize(300, 200);
     QString fun = "du/dt = d^2u/(dx)^2 + 0.5exp(-0.5t) * sin(x)";
@@ -79,6 +91,11 @@ Widget5::Widget5(QWidget *parent) : QWidget(parent) {
 
     thetaLabel = new QLabel(QString::fromWCharArray(L"\u03B8") + ":");
     thetaLineEdit = new QLineEdit("0.5");
+
+    maxTLabel = new QLabel("max t:");
+    maxTLineEdit = new QLineEdit("3");
+
+    sigmaLabel = new QLabel("sigma: " + QString::number(CalcSigma()));
 
     conditionsLineEdit.resize(2);
     conditionsLineEdit[0] = new QLineEdit("u'_x(0, t) = exp(-0.5t)");
@@ -126,12 +143,24 @@ Widget5::Widget5(QWidget *parent) : QWidget(parent) {
         currentApprox = 3;
     });
 
+    QObject::connect(stepLineEdit[0], &QLineEdit::textChanged, this, [&]() {
+        sigmaLabel->setText("sigma: " + QString::number(CalcSigma()));
+    });
+
+    QObject::connect(stepLineEdit[1], &QLineEdit::textChanged, this, [&]() {
+        sigmaLabel->setText("sigma: " + QString::number(CalcSigma()));
+    });
+
+    QObject::connect(maxTLineEdit, &QLineEdit::textChanged, this, [&]() {
+        sigmaLabel->setText("sigma: " + QString::number(CalcSigma()));
+    });
+
     QObject::connect(runButton, &QPushButton::clicked, this, [&]() {
         int Nx = stepLineEdit[0]->text().toInt();
         int Nk = stepLineEdit[1]->text().toInt();
         QVector<double> x(Nx + 1);
         QVector<double> t(Nk + 1);
-        double max_t = 3;
+        double max_t = maxTLineEdit->text().toDouble();
         double tao = max_t / Nk;
         double h = PI / Nx;
         double theta = thetaLineEdit->text().toDouble();
@@ -191,7 +220,7 @@ Widget5::Widget5(QWidget *parent) : QWidget(parent) {
         QProcess p;
         QStringList params;
 
-        params << "../nm_lab5/graph.py" << "analytic" << "method";
+        params << "../graph.py" << "analytic" << "method";
         p.startDetached("python3", params);
         p.waitForFinished(-1);
     });

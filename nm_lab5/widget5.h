@@ -38,6 +38,8 @@ private:
 
     void ConfigureLayouts();
 
+    double CalcSigma();
+
     QVBoxLayout *mainLayout;
     QHBoxLayout *dimensionLayout;
     QHBoxLayout *sourceLayout;
@@ -56,6 +58,11 @@ private:
 
     QLabel *thetaLabel;
     QLineEdit *thetaLineEdit;
+
+    QLabel *maxTLabel;
+    QLineEdit *maxTLineEdit;
+
+    QLabel *sigmaLabel;
 
     QLineEdit *functionLineEdit;
     QLineEdit *analyticSolution;
